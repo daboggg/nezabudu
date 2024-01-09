@@ -2,8 +2,10 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from bot.handlers.main_handlers import main_handlers_router
+from bot.middlewares.apschedmiddleware import SchedulerMiddleware
 from settings import settings
 from utils.comands import set_commands
 
@@ -26,9 +28,16 @@ async def start():
                         )
     logger = logging.getLogger('main')
 
+    # Создаю и запускаю шедулер
+    scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+    scheduler.start()
+
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
 
     dp = Dispatcher()
+
+    # регистрация middlewares
+    dp.update.middleware.register(SchedulerMiddleware(scheduler))
 
     # подключение роутеров
     dp.include_routers(
