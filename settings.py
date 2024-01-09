@@ -1,8 +1,37 @@
-from pydantic_settings import BaseSettings
+from environs import Env
+from dataclasses import dataclass
 
-class Settings(BaseSettings):
+
+@dataclass
+class Bots:
     bot_token: str
     admin_id: int
-    database_url_async: str
 
-settings = Settings(_env_file='.env')
+
+@dataclass
+class DatabaseUrls:
+    async_db_url: str
+
+
+@dataclass
+class Settings:
+    bots: Bots
+    db_urls: DatabaseUrls
+
+
+def get_settings(path: str):
+    env = Env()
+    env.read_env(path)
+
+    return Settings(
+        bots=Bots(
+            bot_token=env.str('BOT_TOKEN'),
+            admin_id=env.int('ADMIN_ID')
+        ),
+        db_urls=DatabaseUrls(
+            async_db_url=env.str('DATABASE_URL_ASYNC'),
+        )
+    )
+
+
+settings = get_settings('.env')
