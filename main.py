@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime, timedelta
 
 from aiogram import Bot, Dispatcher
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -30,6 +31,7 @@ async def start():
 
     # Создаю и запускаю шедулер
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+    # scheduler.add_job()
     scheduler.start()
 
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
@@ -56,3 +58,4 @@ async def start():
 
 if __name__ == '__main__':
     asyncio.run(start())
+

@@ -11,6 +11,7 @@ class Bots:
 @dataclass
 class DatabaseUrls:
     async_db_url: str
+    sync_db_url: str
 
 
 @dataclass
@@ -30,6 +31,7 @@ def get_settings(path: str):
         ),
         db_urls=DatabaseUrls(
             async_db_url=env.str('DATABASE_URL_ASYNC'),
+            sync_db_url=env.str('DATABASE_URL_SYNC'),
         )
     )
 

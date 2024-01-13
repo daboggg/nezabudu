@@ -1,19 +1,10 @@
 import moment
 
-from perser.errors import ParserException
-from perser.utils import intervals
+from parser.errors import ParserException
+from parser.utils import check_in_intervals
 
 
-def check_in_intervals(interval: str) -> str | None:
-    interval = interval.strip().lower()
-    for key, value in intervals.items():
-        for item in value:
-            if item == interval or item + ',' == interval:
-                return key
-
-    return None
-
-
+# обработка команд начиноющихся на "через"
 def after(remind_cmd: list[str]):
     arg = dict()
     result = dict()
@@ -28,6 +19,6 @@ def after(remind_cmd: list[str]):
     if not arg:
         raise ParserException(f"remind cmd is wrong")
 
-    result["date"] = moment.now().add(**arg).date
+    result["run_date"] = moment.now().add(**arg).date
 
     return result
