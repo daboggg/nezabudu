@@ -3,6 +3,8 @@ from datetime import datetime
 from parser.after import after
 from parser.errors import ParserException
 from parser.every import every
+from parser.in_date import in_date
+
 
 # выбирает как обрабатывать remind
 def start_formatter(remind_cmd: list[str]):
@@ -14,6 +16,8 @@ def start_formatter(remind_cmd: list[str]):
         result = every(remind_cmd[1:])
         result["trigger"] = "cron"
         return result
+    else:
+        result = in_date(remind_cmd[1:])
 
 def remind_formatter(remind_tmp: str):
     remind_tmp = remind_tmp.split("@")
