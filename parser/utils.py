@@ -1,3 +1,5 @@
+from parser.errors import ParserException
+
 intervals = {
     "seconds": ["секунда", "секунды", "секунду", "секунд"],
     "minutes": ["минуту", "минуты", "минут", "минута"],
@@ -26,7 +28,7 @@ variants = {
 }
 
 # проверка вариантов
-def check_variants(interval: str) -> list[str, int] | None:
+def check_variants(interval: str) -> list | None:
     interval = interval.strip().lower()
     for key, value in variants.items():
         for item in value:
@@ -34,3 +36,31 @@ def check_variants(interval: str) -> list[str, int] | None:
                 return [key, value.index(item)]
 
     return None
+
+################################################################################
+
+# проверка попадания в дипазон дней
+def check_days(days: int):
+    if not isinstance(days, int): raise ParserException("days should be int")
+    if -1 < days < 32:
+        return days
+    else:
+        raise ParserException("days in out of range")
+
+
+# проверка попадания в дипазон минут или секунд
+def check_minutes_or_seconds(min_or_sec: int):
+    if not isinstance(min_or_sec, int): raise ParserException("minutes or seconds should be int")
+    if -1 < min_or_sec < 60:
+        return min_or_sec
+    else:
+        raise ParserException("minutes or seconds in out of range")
+
+
+# проверка попадания в дипазон часов
+def check_hours(hours: int):
+    if not isinstance(hours, int): raise ParserException("hours should be int")
+    if -1 < hours < 24:
+        return hours
+    else:
+        raise ParserException("hours in out of range")

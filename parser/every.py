@@ -1,7 +1,7 @@
 import re
 
 from parser.errors import ParserException
-from parser.utils import check_variants
+from parser.utils import check_variants, check_days, check_hours, check_minutes_or_seconds
 
 
 # обработка команд начиноющихся на "каждый", "каждое" и т.д
@@ -23,7 +23,7 @@ def every(remind_cmd: list[str]):
     |\d+)?
     """, re.VERBOSE)
 
-    # результат регулярного выражения
+    # результат применения   регулярного выражения
     result = pattern.search(cmd)
 
     # выбор и добавление параметров
@@ -58,33 +58,6 @@ def set_time(params, result):
     else:
         params['hour'] = check_hours(int(result.group("hour")))
         params['minute'] = check_minutes_or_seconds(int(result.group("minute")))
-
-
-# проверка попадания в дипазон дней
-def check_days(days: int):
-    if not isinstance(days, int): raise ParserException("days should be int")
-    if -1 < days < 32:
-        return days
-    else:
-        raise ParserException("days in out of range")
-
-
-# проверка попадания в дипазон минут или секунд
-def check_minutes_or_seconds(min_or_sec: int):
-    if not isinstance(min_or_sec, int): raise ParserException("minutes or seconds should be int")
-    if -1 < min_or_sec < 60:
-        return min_or_sec
-    else:
-        raise ParserException("minutes or seconds in out of range")
-
-
-# проверка попадания в дипазон часов
-def check_hours(hours: int):
-    if not isinstance(hours, int): raise ParserException("hours should be int")
-    if -1 < hours < 24:
-        return hours
-    else:
-        raise ParserException("hours in out of range")
 
 
 # print(every("день в 8:44".split(" ")))
