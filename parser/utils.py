@@ -1,14 +1,16 @@
+from datetime import date
 from parser.errors import ParserException
 
 intervals = {
     "seconds": ["секунда", "секунды", "секунду", "секунд"],
     "minutes": ["минуту", "минуты", "минут", "минута"],
     "hours": ["час", "часа", "часов", ],
-    "days": ["день", "дня", "дней", "сутки","суток",],
-    "weeks": ["неделя", "недели", "недель","неделю",],
+    "days": ["день", "дня", "дней", "сутки", "суток", ],
+    "weeks": ["неделя", "недели", "недель", "неделю", ],
     "months": ["месяц", "месяца", "месяцев", ],
     "years": ["год", "года", "лет", ],
 }
+
 
 # проверка в интервалах
 def check_in_intervals(interval: str) -> str | None:
@@ -27,6 +29,7 @@ variants = {
               "ноября", "декабря", ]
 }
 
+
 # проверка вариантов
 def check_variants(interval: str) -> list | None:
     interval = interval.strip().lower()
@@ -36,6 +39,7 @@ def check_variants(interval: str) -> list | None:
                 return [key, value.index(item)]
 
     return None
+
 
 ################################################################################
 
@@ -64,3 +68,10 @@ def check_hours(hours: int):
         return hours
     else:
         raise ParserException("hours in out of range")
+
+
+# проверка дней по месяцам
+def check_day_of_month(year: int, month: int, day: int):
+    if date(year=year, month=month, day=day):
+        return day
+
