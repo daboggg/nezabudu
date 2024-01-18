@@ -17,7 +17,9 @@ def start_formatter(remind_cmd: list[str]):
         result["trigger"] = "cron"
         return result
     else:
-        result = in_date(remind_cmd[1:])
+        result = in_date(remind_cmd)
+        result["trigger"] = "date"
+        return result
 
 def remind_formatter(remind_tmp: str):
     remind_tmp = remind_tmp.split("@")
@@ -40,6 +42,33 @@ if __name__ == '__main__':
     # remind = "Каждый денЬ@     d"
     remind = "Каждый СрЕду в 20.32 @ блядство разное @@ aflfk "
     print(remind_formatter(remind))
+    print(remind_formatter("17 февраля в 3 @ тру ля ля"))
+    print(remind_formatter("через 2 часа @ dlfkj"))
+
+    # print(in_date("17 февраля в 3".split(" ")))
+    # print(in_date("17 февраля в 02.32".split(" ")))
+    # print(in_date("17 во марта в 02.32".split(" ")))
+    # print(in_date(" понедельник".split(" ")))
+    # print(in_date("d понедельник 20.36".split(" ")))
+    # print(in_date("d понедельник f 20.36".split(" ")))
+    # print(in_date("20  среду f 14.26".split(" ")))
+    # print(in_date("20 jd понедельник f 20".split(" ")))
+    # print(in_date("20 jd 12.12.26 f 20.36".split(" ")))
+    # print(in_date("20 ffjd 12.12.24 fff 23".split(" ")))
+    # print(in_date("12.12.24 fff 07".split(" ")))
+    # print(in_date("d 12.12.24 df".split(" ")))
+    # print(in_date("в dfffdsdf dfffdsdf dfffdsdf 20".split(" ")))
+    # print(in_date("в 20".split(" ")))
+    # print(in_date("в 7".split(" ")))
+    # print(in_date("в 13".split(" ")))
+    #
+    # print(in_date(" завтра".split(" ")))
+    # print(in_date("завтра".split(" ")))
+    # print(in_date("завтра в 2.11".split(" ")))
+    # print(in_date("d завтра 20.36".split(" ")))
+    # print(in_date("d завтра f 20.36".split(" ")))
+    # print(in_date("20 jd послезавтра f 20.36".split(" ")))
+    # print(in_date("20 jd завтра f 20".split(" ")))
 
 
 

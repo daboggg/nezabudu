@@ -6,7 +6,7 @@ from parser.errors import ParserException
 from parser.utils import check_hours, check_minutes_or_seconds, check_variants
 
 
-def in_date(remind_cmd: list[str]) -> dict[str, datetime]:
+def in_date(remind_cmd: list[str]) -> dict:
     # итоговый словарь с параметрами
     params = dict()
     cmd = ' '.join(remind_cmd)
@@ -146,27 +146,4 @@ def set_date_on_month_or_day_of_week(numb: int, result: Match, params: dict, per
 # in_date("в 13-30".split(" "))
 
 
-# print(in_date("17 февраля в 3".split(" ")))
-# print(in_date("17 февраля в 02.32".split(" ")))
-# print(in_date("17 во марта в 02.32".split(" ")))
-# print(in_date(" понедельник".split(" ")))
-# print(in_date("d понедельник 20.36".split(" ")))
-# print(in_date("d понедельник f 20.36".split(" ")))
-# print(in_date("20  среду f 14.26".split(" ")))
-# print(in_date("20 jd понедельник f 20".split(" ")))
-# print(in_date("20 jd 12.12.26 f 20.36".split(" ")))
-# print(in_date("20 ffjd 12.12.24 fff 23".split(" ")))
-# print(in_date("12.12.24 fff 07".split(" ")))
-# print(in_date("d 12.12.24 df".split(" ")))
-# print(in_date("в dfffdsdf dfffdsdf dfffdsdf 20".split(" ")))
-# print(in_date("в 20".split(" ")))
-# print(in_date("в 7".split(" ")))
-# print(in_date("в 13".split(" ")))
-#
-# print(in_date(" завтра".split(" ")))
-# print(in_date("завтра".split(" ")))
-# print(in_date("завтра в 2.11".split(" ")))
-# print(in_date("d завтра 20.36".split(" ")))
-# print(in_date("d завтра f 20.36".split(" ")))
-# print(in_date("20 jd послезавтра f 20.36".split(" ")))
-# print(in_date("20 jd завтра f 20".split(" ")))
+
