@@ -11,73 +11,6 @@ def in_date(remind_cmd: list[str]) -> dict[str, datetime]:
     params = dict()
     cmd = ' '.join(remind_cmd)
 
-    # регулярное выражение для поиска
-    # pattern = re.compile("""
-    # (?P<num>\d+)*
-    # \s*
-    # (?P<date>[а-я]{3,}|\d\d[.:-]\d\d[.:-]\d{2,4})?
-    # \D*
-    # (?P<time>
-    #     (?P<hour>\d{1,2})
-    #     [-:.]
-    #     (?P<minute>\d\d)
-    # |\d+)?
-    #     """, re.VERBOSE)
-
-    #  pattern = re.compile("""
-    #  (?P<num>\d+)*
-    #  \W*
-    #  (?P<q>(?P<date>[а-я]{3,}|\d\d[.:-]\d\d[.:-]\d{2,4}))?
-    #  \D*
-    #  (?(q)
-    #  (?P<time>
-    #      (?P<hour>\d{1,2})
-    #      [-:.]
-    #      (?P<minute>\d\d)
-    #  |\d+)?
-    #  |
-    #  (?P<only_time>
-    # [^.:-]\d\d[.:-]\d\d
-    #  )
-    #  )
-    #      """, re.VERBOSE)
-
-    # pattern = re.compile("""
-    #     (?P<num>\d+)*
-    #     (?:\w*\s*)
-    #     (?P<date>[а-я]{3,}|\d\d[.:-]\d\d[.:-]\d{2,4})?
-    #     \D*
-    #     (?(date)
-    #         (?P<time>
-    #             (?P<hour>\d{1,2})
-    #             [-:.]
-    #             (?P<minute>\d\d)
-    #         |\d+)?
-    #     |
-    #     [^.:-](?P<only_time>
-    #     \d\d[.:-]\d\d
-    #     )
-    #     )
-    #         """, re.VERBOSE)
-
-    # pattern = re.compile("""
-    #     (?P<num>\d+)*
-    #     \s*
-    #     (?P<date>[а-я]{3,}|\d\d[.:-]\d\d[.:-]\d{2,4})?
-    #     \D*
-    #     (?(date)
-    #         (?P<time>
-    #             (?P<hour>\d{1,2})
-    #             [-:.]
-    #             (?P<minute>\d\d)
-    #         |\d+)?
-    #     |
-    #     [^.:-](?P<only_time>
-    #     \d\d[.:-]\d\d
-    #     )
-    #     )
-    #         """, re.VERBOSE)
-
     pattern = re.compile("""
             (?P<num>\d+)?
             (?(num)\s*)
@@ -92,29 +25,29 @@ def in_date(remind_cmd: list[str]) -> dict[str, datetime]:
                     (?P<minute>\d\d)
                 |\d+)?
             |
-            [^.:-](?P<only_time>
-            \d\d[.:-]\d\d
+            \s(?P<only_time>
+            \d?\d[.:-]\d\d
             |
-            \d\d
+            \d?\d
             )
             )
                 """, re.VERBOSE)
 
     # результат применения   регулярного выражения
     result = pattern.search(cmd)
-    # print(result[0])
-    print(pattern.findall(cmd))
 
     # выбор и добавление параметров
     if result.group("date") == "завтра":
         set_date_tomorrow_or_after_tomorrow(1, result, params)
     elif result.group("date") == "послезавтра":
         set_date_tomorrow_or_after_tomorrow(2, result, params)
+    elif not result.group("date") and result.group("only_time"):
+        set_time(result, params)
+    elif result.group("date") and (found := check_variants(result.group("date"))):
+        set_date_on_month_or_day_of_week(found[1], result, params, found[0])
     elif re.search(r"\d\d[.:-]\d\d[.:-]\d\d\d?\d?", result.group("date")):
         day, month, year = re.split(r":|-|\.", result.group("date"))
         set_date(int(year), int(month), int(day), result, params)
-    elif result.group("date") and (found := check_variants(result.group("date"))):
-        set_date_on_month_or_day_of_week(found[1], result, params, found[0])
 
     if not len(params):
         raise ParserException("incorrect date")
@@ -123,7 +56,7 @@ def in_date(remind_cmd: list[str]) -> dict[str, datetime]:
 
 
 # установка времени
-def get_time(result: Match):
+def get_time(result: Match)->list[int]:
     if not result.group("time"):
         hour = 8
         minute = 0
@@ -136,8 +69,28 @@ def get_time(result: Match):
     return [hour, minute]
 
 
+# установка даты когда указано только время
+def set_time(result: Match, params: dict)->None:
+    now = datetime.now()
+    date_for_checking = None
+    hour =  minute = None
+    if re.search(r"\d?\d[.:-]\d\d", result.group("only_time")):
+        result =  re.split(r":|-|\.", result.group("only_time"))
+        hour = int(result[0])
+        minute = int(result[1])
+    else:
+        hour = int(result.group("only_time"))
+        minute = 0
+
+    date_for_checking = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if now < date_for_checking:
+        params["run_date"] = date_for_checking
+    else:
+        params["run_date"] = date_for_checking + timedelta(days=1)
+
+
 # установка даты (dd:mm:YYYY)
-def set_date(year: int, month: int, day: int, result: Match, params: dict):
+def set_date(year: int, month: int, day: int, result: Match, params: dict)->None:
     if year < 100: year = year + 2000
     hour, minute = get_time(result)
     now = datetime.now()
@@ -150,7 +103,7 @@ def set_date(year: int, month: int, day: int, result: Match, params: dict):
 
 
 # установка даты (завтра, послезавтра)
-def set_date_tomorrow_or_after_tomorrow(days: int, result: Match, params: dict):
+def set_date_tomorrow_or_after_tomorrow(days: int, result: Match, params: dict)->None:
     hour, minute = get_time(result)
     now = datetime.now()
     date_for_checking = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
@@ -193,27 +146,27 @@ def set_date_on_month_or_day_of_week(numb: int, result: Match, params: dict, per
 # in_date("в 13-30".split(" "))
 
 
-print(in_date("17 февраля в 02.32".split(" ")))
-print(in_date("17 во марта в 02.32".split(" ")))
-print(in_date(" понедельник".split(" ")))
-print(in_date("d понедельник 20.36".split(" ")))
-print(in_date("d понедельник f 20.36".split(" ")))
-print(in_date("20  среду f 14.26".split(" ")))
-print(in_date("20 jd понедельник f 20".split(" ")))
-print(in_date("20 jd 12.12.26 f 20.36".split(" ")))
-print(in_date("20 ffjd 12.12.24 fff 23".split(" ")))
-print(in_date("12.12.24 fff 07".split(" ")))
-print(in_date("d 12.12.24 df".split(" ")))
+# print(in_date("17 февраля в 3".split(" ")))
+# print(in_date("17 февраля в 02.32".split(" ")))
+# print(in_date("17 во марта в 02.32".split(" ")))
+# print(in_date(" понедельник".split(" ")))
+# print(in_date("d понедельник 20.36".split(" ")))
+# print(in_date("d понедельник f 20.36".split(" ")))
+# print(in_date("20  среду f 14.26".split(" ")))
+# print(in_date("20 jd понедельник f 20".split(" ")))
+# print(in_date("20 jd 12.12.26 f 20.36".split(" ")))
+# print(in_date("20 ffjd 12.12.24 fff 23".split(" ")))
+# print(in_date("12.12.24 fff 07".split(" ")))
+# print(in_date("d 12.12.24 df".split(" ")))
 # print(in_date("в dfffdsdf dfffdsdf dfffdsdf 20".split(" ")))
 # print(in_date("в 20".split(" ")))
-# print(in_date("в 07".split(" ")))
-# print(in_date("в 20.25".split(" ")))
-
-
-print(in_date(" завтра".split(" ")))
-print(in_date("завтра".split(" ")))
-print(in_date("завтра в 2.11".split(" ")))
-print(in_date("d завтра 20.36".split(" ")))
-print(in_date("d завтра f 20.36".split(" ")))
-print(in_date("20 jd послезавтра f 20.36".split(" ")))
-print(in_date("20 jd завтра f 20".split(" ")))
+# print(in_date("в 7".split(" ")))
+# print(in_date("в 13".split(" ")))
+#
+# print(in_date(" завтра".split(" ")))
+# print(in_date("завтра".split(" ")))
+# print(in_date("завтра в 2.11".split(" ")))
+# print(in_date("d завтра 20.36".split(" ")))
+# print(in_date("d завтра f 20.36".split(" ")))
+# print(in_date("20 jd послезавтра f 20.36".split(" ")))
+# print(in_date("20 jd завтра f 20".split(" ")))
