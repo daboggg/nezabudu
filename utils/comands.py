@@ -6,11 +6,11 @@ async def set_commands(bot: Bot):
     commands = [
         BotCommand(
             command='start',
-            description='Тест'
+            description='начало работы'
         ),
         BotCommand(
             command='help',
-            description='Тест'
+            description='помощь'
         ),
     ]
 
