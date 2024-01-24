@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery
@@ -6,8 +6,11 @@ from aiogram_dialog import Dialog, Window, DialogManager, StartMode
 from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.kbd import SwitchTo, Button, Row, Next, Cancel, Start, Back
 from aiogram_dialog.widgets.text import Const, Format
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from bot.dialogs.help_dialog import HelpSG
+from db.db_helper import DatabaseHelper
+from parser.core import remind_formatter
 
 main_dialog_router = Router()
 
@@ -47,7 +50,24 @@ async def cancel_clicked(callback: CallbackQuery, button: Button, manager: Dialo
 
 
 async def accept_clicked(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await callback.message.answer("добавлено")
+    print("GGGGGGGGGGGGGGGGG")
+    print(manager.middleware_data.keys())
+    db_helper: DatabaseHelper = manager.middleware_data.get("db_helper")
+    apscheduler: AsyncIOScheduler = manager.middleware_data.get("apscheduler")
+    task = f"{manager.find('condition').get_value()} @ {manager.find('text').get_value()}"
+
+    try:
+        result = remind_formatter(task)
+        apscheduler.add_job(
+            send_reminder,
+            **result["args"],
+            kwargs={'bot': manager.event.bot, 'chat_id': manager.event.message.chat.id,
+                    'text': f'⚠️ Вы просили напомнить о покупке билета на'}
+        )
+        await callback.message.answer(f"Все отлично,получилось! {result}")
+    except Exception as e:
+        await callback.message.answer(str(e))
+
     await manager.done()
 
 
@@ -104,3 +124,8 @@ main_dialog = Dialog(
 @main_dialog_router.message(CommandStart())
 async def cmd_start(_, dialog_manager: DialogManager) -> None:
     await dialog_manager.start(MainSG.start, mode=StartMode.RESET_STACK)
+
+
+# функция для отправки напомнаний
+async def send_reminder(bot: Bot, chat_id: int, text: str) -> None:
+    await bot.send_message(chat_id, text, parse_mode='HTML')
