@@ -7,10 +7,12 @@ from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.kbd import SwitchTo, Button, Row, Next, Cancel, Start, Back
 from aiogram_dialog.widgets.text import Const, Format
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.dialogs.help_dialog import HelpSG
-from db.db_helper import DatabaseHelper
+from db.db_actions import add_task_to_db
 from parser.core import remind_formatter
+from scheduler.scheduler_actions import add_job_to_scheduler
 
 main_dialog_router = Router()
 
@@ -50,20 +52,18 @@ async def cancel_clicked(callback: CallbackQuery, button: Button, manager: Dialo
 
 
 async def accept_clicked(callback: CallbackQuery, button: Button, manager: DialogManager):
-    print("GGGGGGGGGGGGGGGGG")
-    print(manager.middleware_data.keys())
-    db_helper: DatabaseHelper = manager.middleware_data.get("db_helper")
+
+    session: AsyncSession = manager.middleware_data.get("session")
     apscheduler: AsyncIOScheduler = manager.middleware_data.get("apscheduler")
+
     task = f"{manager.find('condition').get_value()} @ {manager.find('text').get_value()}"
 
     try:
         result = remind_formatter(task)
-        apscheduler.add_job(
-            send_reminder,
-            **result["args"],
-            kwargs={'bot': manager.event.bot, 'chat_id': manager.event.message.chat.id,
-                    'text': f'⚠️ Вы просили напомнить о покупке билета на'}
-        )
+        await add_job_to_scheduler(apscheduler, manager, result, send_reminder)
+
+        await add_task_to_db(manager, result, session)
+
         await callback.message.answer(f"Все отлично,получилось! {result}")
     except Exception as e:
         await callback.message.answer(str(e))
@@ -71,6 +71,7 @@ async def accept_clicked(callback: CallbackQuery, button: Button, manager: Dialo
     await manager.done()
 
 
+# главный диалог
 main_dialog = Dialog(
     Window(
         Const("Если вы не знаете как пользоваться воспользуйтесь помощью в меню"),

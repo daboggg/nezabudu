@@ -9,13 +9,13 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bot.dialogs.main_dialog import main_dialog, main_dialog_router
 from bot.dialogs.help_dialog import help_dialog
 from bot.middlewares.apschedmiddleware import SchedulerMiddleware
+from db.db_helper import db_helper
 from settings import settings
-from utils.comands import set_commands
+from bot.comands import set_commands
 
 
 async def start_bot(bot):
     await set_commands(bot)
-    # await bot.send_message(settings.bots.admin_id, text='Бот запущен')
     await bot.send_message(settings.bots.admin_id, text='Бот запущен')
 
 
@@ -32,16 +32,16 @@ async def start():
     logger = logging.getLogger('main')
 
     # Создаю и запускаю шедулер
-    # scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
-    # scheduler.start()
+    scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+    scheduler.start()
 
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
 
     storage = MemoryStorage()
-    dp = Dispatcher(storage=storage)
+    dp = Dispatcher(storage=storage, session=db_helper.get_scoped_session())
 
     # регистрация middlewares
-    # dp.update.middleware.register(SchedulerMiddleware(scheduler))
+    dp.update.middleware.register(SchedulerMiddleware(scheduler))
 
     dp.include_routers(
         main_dialog_router,

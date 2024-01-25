@@ -9,15 +9,16 @@ class Bots:
 
 
 @dataclass
-class DatabaseUrls:
+class Database:
     async_db_url: str
     sync_db_url: str
+    db_echo: bool
 
 
 @dataclass
 class Settings:
     bots: Bots
-    db_urls: DatabaseUrls
+    db: Database
 
 
 def get_settings(path: str):
@@ -29,9 +30,10 @@ def get_settings(path: str):
             bot_token=env.str('BOT_TOKEN'),
             admin_id=env.int('ADMIN_ID')
         ),
-        db_urls=DatabaseUrls(
+        db=Database(
             async_db_url=env.str('DATABASE_URL_ASYNC'),
             sync_db_url=env.str('DATABASE_URL_SYNC'),
+            db_echo=env.bool('DB_ECHO')
         )
     )
 
