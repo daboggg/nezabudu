@@ -1,4 +1,4 @@
-from aiogram import Router, F, Bot
+from aiogram import Router, F
 from aiogram.filters import CommandStart
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery
@@ -60,7 +60,7 @@ async def accept_clicked(callback: CallbackQuery, button: Button, manager: Dialo
 
     try:
         result = remind_formatter(task)
-        await add_job_to_scheduler(apscheduler, manager, result, send_reminder)
+        await add_job_to_scheduler(apscheduler, manager, result)
 
         await add_task_to_db(manager, result, session)
 
@@ -125,8 +125,3 @@ main_dialog = Dialog(
 @main_dialog_router.message(CommandStart())
 async def cmd_start(_, dialog_manager: DialogManager) -> None:
     await dialog_manager.start(MainSG.start, mode=StartMode.RESET_STACK)
-
-
-# функция для отправки напомнаний
-async def send_reminder(bot: Bot, chat_id: int, text: str) -> None:
-    await bot.send_message(chat_id, text, parse_mode='HTML')

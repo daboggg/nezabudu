@@ -10,6 +10,7 @@ from bot.dialogs.main_dialog import main_dialog, main_dialog_router
 from bot.dialogs.help_dialog import help_dialog
 from bot.middlewares.apschedmiddleware import SchedulerMiddleware
 from db.db_helper import db_helper
+from scheduler.scheduler_actions import recovery_job_to_scheduler
 from settings import settings
 from bot.comands import set_commands
 
@@ -36,6 +37,9 @@ async def start():
     scheduler.start()
 
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
+
+    # восстановление заданий при старте из базы данных
+    await recovery_job_to_scheduler(scheduler, bot)
 
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage, session=db_helper.get_scoped_session())
