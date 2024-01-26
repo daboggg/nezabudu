@@ -60,11 +60,11 @@ async def accept_clicked(callback: CallbackQuery, button: Button, manager: Dialo
 
     try:
         result = remind_formatter(task)
-        await add_job_to_scheduler(apscheduler, manager, result)
 
-        await add_task_to_db(manager, result, session)
+        task_id = await add_task_to_db(manager, result, session)
+        job = await add_job_to_scheduler(apscheduler, manager, result, task_id)
 
-        await callback.message.answer(f"Все отлично,получилось! {result}")
+        await callback.message.answer(f"Все отлично,получилось! {result}\n\n{job}")
     except Exception as e:
         await callback.message.answer(str(e))
 

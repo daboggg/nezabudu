@@ -1,6 +1,8 @@
 from asyncio import current_task
 
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, async_scoped_session, AsyncSession
+from sqlalchemy.orm import sessionmaker
 
 from settings import settings
 
@@ -29,3 +31,16 @@ class DatabaseHelper:
 
 
 db_helper = DatabaseHelper(url=settings.db.async_db_url,echo=settings.db.db_echo)
+
+
+class SyncDatabaseHelper:
+    def __init__(self, url: str, echo: bool = False):
+        self.engine = create_engine(
+            url=url,
+            echo=echo
+        )
+        self.session_factory = sessionmaker(
+            self.engine,
+        )
+
+sync_db_helper = SyncDatabaseHelper(url=settings.db.sync_db_url,echo=settings.db.db_echo)

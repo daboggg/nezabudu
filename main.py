@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+import apscheduler.events
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
@@ -9,19 +10,22 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bot.dialogs.main_dialog import main_dialog, main_dialog_router
 from bot.dialogs.help_dialog import help_dialog
 from bot.middlewares.apschedmiddleware import SchedulerMiddleware
+from db.db_actions import sync_delete_task_from_db
 from db.db_helper import db_helper
 from scheduler.scheduler_actions import recovery_job_to_scheduler
 from settings import settings
 from bot.comands import set_commands
 
 
-async def start_bot(bot):
+async def start_bot(bot: Bot):
     await set_commands(bot)
     await bot.send_message(settings.bots.admin_id, text='Бот запущен')
 
+scheduler: AsyncIOScheduler
 
-async def stop_bot(bot):
+async def stop_bot(bot: Bot):
     await bot.send_message(settings.bots.admin_id, text='Бот остановлен')
+    scheduler.shutdown()
 
 
 async def start():
@@ -33,8 +37,15 @@ async def start():
     logger = logging.getLogger('main')
 
     # Создаю и запускаю шедулер
+    global scheduler
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+
+
+    # слушатель на событие удаления job
+    scheduler.add_listener(sync_delete_task_from_db, apscheduler.events.EVENT_JOB_REMOVED)
     scheduler.start()
+
+
 
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
 
@@ -47,13 +58,15 @@ async def start():
     # регистрация middlewares
     dp.update.middleware.register(SchedulerMiddleware(scheduler))
 
+
+    # подключение роутеров
     dp.include_routers(
         main_dialog_router,
         main_dialog,
         help_dialog
     )
-    # подключение роутеров
 
+    # подключение диалогов
     setup_dialogs(dp)
 
     dp.startup.register(start_bot)
