@@ -24,7 +24,7 @@ async def add_job_to_scheduler(
         name=str(manager.event.from_user.id),
         kwargs={
             'bot': manager.event.bot, 'chat_id': manager.event.from_user.id,
-            'text': f'⚠️ {result["msg"]}'
+            'text': result["msg"]
         }
     )
     return job
@@ -43,6 +43,6 @@ async def recovery_job_to_scheduler(apscheduler: AsyncIOScheduler, bot: Bot):
                 name=str(task.chat_id),
                 kwargs={
                     'bot': bot, 'chat_id': task.chat_id,
-                    'text': f'⚠️ {task.text}'
+                    'text': task.text
                 }
             )

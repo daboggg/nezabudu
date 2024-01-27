@@ -34,6 +34,7 @@ def every(remind_cmd: list[str]):
         set_time(params, result)
     elif found := check_variants(result.group("date")):
         params[found[0]] = found[1]
+        set_day(params, result)
         set_time(params, result)
 
     if not len(params):
