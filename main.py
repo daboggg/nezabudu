@@ -7,8 +7,9 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from bot.dialogs.main_dialog import main_dialog, main_dialog_router
+from bot.dialogs.main_dialog import main_dialog
 from bot.dialogs.help_dialog import help_dialog
+from bot.handlers.cmd import cmd_router
 from bot.middlewares.apschedmiddleware import SchedulerMiddleware
 from db.db_actions import sync_delete_task_from_db
 from db.db_helper import db_helper
@@ -61,7 +62,7 @@ async def start():
 
     # подключение роутеров
     dp.include_routers(
-        main_dialog_router,
+        cmd_router,
         main_dialog,
         help_dialog
     )

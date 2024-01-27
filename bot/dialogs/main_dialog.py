@@ -1,8 +1,8 @@
 from aiogram import Router, F
-from aiogram.filters import CommandStart
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery
-from aiogram_dialog import Dialog, Window, DialogManager, StartMode
+from aiogram.utils.formatting import as_list, Bold, Italic, as_marked_section, as_key_value
+from aiogram_dialog import Dialog, Window, DialogManager
 from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.kbd import SwitchTo, Button, Row, Next, Cancel, Start, Back
 from aiogram_dialog.widgets.text import Const, Format
@@ -13,9 +13,6 @@ from bot.dialogs.help_dialog import HelpSG
 from db.db_actions import add_task_to_db
 from parser.core import remind_formatter
 from scheduler.scheduler_actions import add_job_to_scheduler
-
-main_dialog_router = Router()
-
 
 class MainSG(StatesGroup):
     start = State()
@@ -52,7 +49,6 @@ async def cancel_clicked(callback: CallbackQuery, button: Button, manager: Dialo
 
 
 async def accept_clicked(callback: CallbackQuery, button: Button, manager: DialogManager):
-
     session: AsyncSession = manager.middleware_data.get("session")
     apscheduler: AsyncIOScheduler = manager.middleware_data.get("apscheduler")
 
@@ -71,47 +67,68 @@ async def accept_clicked(callback: CallbackQuery, button: Button, manager: Dialo
     await manager.done()
 
 
+# форматированный текст для главного диалога
+separator = "✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦"
+start_text = as_list(
+    Bold("💡 Если вы не знаете как пользоваться воспользуйтесь помощью👇"),
+    separator
+)
+condition_text = as_list(
+    Bold("💡 Когда вы хотите получить напоминание❓"),
+    Italic("введите текст ..🖋"),
+    separator
+)
+task_text = as_list(
+    Bold("💡 Введите текст напоминания"),
+    separator
+)
+total_text = Format(
+    as_list(
+        as_marked_section(
+            Bold("💡 Итог:"),
+            as_key_value("Напоминание придет", Italic("{condition}")),
+            as_key_value("С текстом", Italic("{text}")),
+            marker="✔️ "
+        ),
+        separator,
+    ).as_html()),
+
 # главный диалог
 main_dialog = Dialog(
     Window(
-        Const("Если вы не знаете как пользоваться воспользуйтесь помощью в меню"),
-        Const("= = = = = = = = = ="),
+        Const(start_text.as_html()),
         Row(
-            Start(Const("help"), id="help", state=HelpSG.start),
+            Start(Const("помощь"), id="help", state=HelpSG.start),
             Next(Const("далее"))
         ),
         state=MainSG.start
     ),
     Window(
-        Const("Введите когда вы хотите получить напоминание(я)"),
-        Const("= = = = = = = = = ="),
+        Const(condition_text.as_html()),
         TextInput(id="condition", on_success=next_state_or_finish_state),
         Row(
             Back(Const("назад")),
-            Start(Const("help"), id="help", state=HelpSG.start),
+            Start(Const("помощь"), id="help", state=HelpSG.start),
         ),
         CANCEL_EDIT,
         state=MainSG.condition
     ),
     Window(
-        Const("Введите текст напоминания"),
-        Const("= = = = = = = = = ="),
+        Const(task_text.as_html()),
         TextInput(id="text", on_success=next_state_or_finish_state),
         Row(
             Back(Const("назад")),
-            Start(Const("help"), id="help", state=HelpSG.start),
+            Start(Const("помощь"), id="help", state=HelpSG.start),
         ),
         CANCEL_EDIT,
         state=MainSG.text
     )
     ,
     Window(
-        Format("Напоминание будет: {condition}"),
-        Format("С текстом: {text}"),
-        Const("= = = = = = = = = ="),
+        *total_text,
         SwitchTo(Const("Изменить условие"), state=MainSG.condition, id="to_condition"),
         SwitchTo(Const("Изменить текст"), state=MainSG.text, id="to_text"),
-        Start(Const("help"), id="help", state=HelpSG.start),
+        Start(Const("помощь"), id="help", state=HelpSG.start),
         Row(
             Cancel(Const("отмена"), on_click=cancel_clicked),
             Button(Const("принять"), id="accept", on_click=accept_clicked),
@@ -120,8 +137,3 @@ main_dialog = Dialog(
         getter=result_getter
     ),
 )
-
-
-@main_dialog_router.message(CommandStart())
-async def cmd_start(_, dialog_manager: DialogManager) -> None:
-    await dialog_manager.start(MainSG.start, mode=StartMode.RESET_STACK)
