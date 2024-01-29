@@ -12,6 +12,10 @@ async def set_commands(bot: Bot):
             command='help',
             description='помощь'
         ),
+        BotCommand(
+            command='list_of_reminds',
+            description='список напоминаний'
+        ),
     ]
 
     await bot.set_my_commands(commands, BotCommandScopeDefault())

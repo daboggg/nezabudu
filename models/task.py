@@ -9,3 +9,4 @@ class Task(Base):
     task_params: Mapped[str]
     chat_id: Mapped[int]
     text: Mapped[str]
+    criterion: Mapped[str]

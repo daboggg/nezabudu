@@ -7,6 +7,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from bot.dialogs.list_of_remiders_dialog import list_of_reminders_dialog
 from bot.dialogs.main_dialog import main_dialog
 from bot.dialogs.help_dialog import help_dialog
 from bot.handlers.cmd import cmd_router
@@ -64,7 +65,8 @@ async def start():
     dp.include_routers(
         cmd_router,
         main_dialog,
-        help_dialog
+        help_dialog,
+        list_of_reminders_dialog,
     )
 
     # подключение диалогов

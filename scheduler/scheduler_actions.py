@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 
 from aiogram import Bot
@@ -9,6 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bot.utils import send_reminder
 from db.db_actions import get_tasks_from_db
 
+logger = logging.getLogger(__name__)
 
 # добавление задание в скедулер
 async def add_job_to_scheduler(
@@ -23,8 +25,10 @@ async def add_job_to_scheduler(
         id=str(task_id),
         name=str(manager.event.from_user.id),
         kwargs={
-            'bot': manager.event.bot, 'chat_id': manager.event.from_user.id,
-            'text': result["msg"]
+            'bot': manager.event.bot,
+            'chat_id': manager.event.from_user.id,
+            'text': result["msg"],
+            'criterion': manager.find('criterion').get_value()
         }
     )
     return job
@@ -42,7 +46,9 @@ async def recovery_job_to_scheduler(apscheduler: AsyncIOScheduler, bot: Bot):
                 id=str(task.id),
                 name=str(task.chat_id),
                 kwargs={
-                    'bot': bot, 'chat_id': task.chat_id,
-                    'text': task.text
+                    'bot': bot,
+                    'chat_id': task.chat_id,
+                    'text': task.text,
+                    'criterion': task.criterion
                 }
             )

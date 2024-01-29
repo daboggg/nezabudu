@@ -3,7 +3,7 @@ from aiogram.utils.formatting import as_list
 
 
 # функция для отправки напомнаний
-async def send_reminder(bot: Bot, chat_id: int, text: str) -> None:
+async def send_reminder(bot: Bot, chat_id: int, text: str, criterion: str) -> None:
     # фоматирование текста для напоминания
     format_text = as_list(
         "\t── ⋆⋅☆⋅⋆ ── ⋆⋅☆⋅⋆ ──",

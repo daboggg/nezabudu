@@ -24,6 +24,7 @@ async def add_task_to_db(manager: DialogManager, result: dict, session: AsyncSes
         task_params=json.dumps(result["args"]),
         chat_id=manager.event.from_user.id,
         text=manager.find('text').get_value(),
+        criterion=manager.find('criterion').get_value()
     )
     session.add(task)
     await session.flush()
