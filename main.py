@@ -48,7 +48,6 @@ async def start():
     scheduler.start()
 
 
-
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
 
     # восстановление заданий при старте из базы данных
