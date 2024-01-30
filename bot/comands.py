@@ -6,7 +6,7 @@ async def set_commands(bot: Bot):
     commands = [
         BotCommand(
             command='start',
-            description='начало работы'
+            description='добавить напоминание'
         ),
         BotCommand(
             command='help',

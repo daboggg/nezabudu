@@ -5,7 +5,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery
 from aiogram.utils.formatting import Bold, as_key_value, as_marked_section
 from aiogram_dialog import Dialog, Window, DialogManager
-from aiogram_dialog.widgets.kbd import Select, Column
+from aiogram_dialog.widgets.kbd import Select, Column, Back, Button, Row
 from aiogram_dialog.widgets.text import Const, Format
 from apscheduler.job import Job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -54,6 +54,15 @@ async def on_remind_selected(callback: CallbackQuery, widget: Any,
     await manager.next()
 
 
+async def on_delete(callback: CallbackQuery, button: Button,
+                     manager: DialogManager):
+    scheduler: AsyncIOScheduler = manager.middleware_data.get("apscheduler")
+    job_id: str = manager.dialog_data["s_reminds"]
+    scheduler.remove_job(job_id)
+    await callback.answer("Напоминание удалено")
+    await manager.back()
+
+
 list_of_reminders_dialog = Dialog(
     Window(
         Const("📄 Список напоминаний"),
@@ -68,7 +77,6 @@ list_of_reminders_dialog = Dialog(
         ),
         state=ListOfRemindersSG.start,
         getter=window1_get_data,
-
     ),
     Window(
         Format("{remind_text}"),
@@ -81,6 +89,10 @@ list_of_reminders_dialog = Dialog(
         #         on_click=on_remind_selected,
         #     ),
         # ),
+        Row(
+            Back(Const("Назад")),
+            Button(Const("Удалить"), on_click=on_delete, id="delete_remind"),
+        ),
         state=ListOfRemindersSG.remind,
         getter=window2_get_data,
 
