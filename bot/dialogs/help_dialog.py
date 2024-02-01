@@ -1,12 +1,9 @@
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.formatting import Bold, as_marked_section, as_list
 from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.kbd import Cancel
 from aiogram_dialog.widgets.text import Const
 
-
-class HelpSG(StatesGroup):
-    start = State()
+from bot.dialogs.state_groups import HelpSG
 
 title = Bold("📌 Используйте примеры для установки напоминания.\n")
 examples = as_marked_section(

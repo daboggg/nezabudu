@@ -1,19 +1,15 @@
 import operator
 from typing import Any
 
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery
 from aiogram.utils.formatting import Bold, as_key_value, as_marked_section
 from aiogram_dialog import Dialog, Window, DialogManager
-from aiogram_dialog.widgets.kbd import Select, Column, Back, Button, Row
+from aiogram_dialog.widgets.kbd import Select, Column, Back, Button, Row, Start
 from aiogram_dialog.widgets.text import Const, Format
 from apscheduler.job import Job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-
-class ListOfRemindersSG(StatesGroup):
-    start = State()
-    remind = State()
+from bot.dialogs.state_groups import ListOfRemindersSG, MainSG
 
 
 async def window1_get_data(**kwargs):
@@ -55,12 +51,19 @@ async def on_remind_selected(callback: CallbackQuery, widget: Any,
 
 
 async def on_delete(callback: CallbackQuery, button: Button,
-                     manager: DialogManager):
+                    manager: DialogManager):
     scheduler: AsyncIOScheduler = manager.middleware_data.get("apscheduler")
     job_id: str = manager.dialog_data["s_reminds"]
     scheduler.remove_job(job_id)
     await callback.answer("Напоминание удалено")
     await manager.back()
+
+
+async def new_task_clicked(cq: CallbackQuery,
+        button: Button,
+        dialog_manager: DialogManager):
+    await dialog_manager.done()
+
 
 
 list_of_reminders_dialog = Dialog(
@@ -75,6 +78,7 @@ list_of_reminders_dialog = Dialog(
                 on_click=on_remind_selected,
             ),
         ),
+        Start(Const("добавить напоминание"), id="new_task", state=MainSG.criterion, on_click=new_task_clicked),
         state=ListOfRemindersSG.start,
         getter=window1_get_data,
     ),
@@ -90,8 +94,8 @@ list_of_reminders_dialog = Dialog(
         #     ),
         # ),
         Row(
-            Back(Const("Назад")),
-            Button(Const("Удалить"), on_click=on_delete, id="delete_remind"),
+            Back(Const("назад")),
+            Button(Const("удалить"), on_click=on_delete, id="delete_remind"),
         ),
         state=ListOfRemindersSG.remind,
         getter=window2_get_data,

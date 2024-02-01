@@ -1,25 +1,17 @@
 from aiogram import F
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery
 from aiogram.utils.formatting import as_list, Bold, Italic, as_marked_section, as_key_value
 from aiogram_dialog import Dialog, Window, DialogManager
 from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.kbd import SwitchTo, Button, Row, Next, Cancel, Start, Back
+from aiogram_dialog.widgets.kbd import SwitchTo, Button, Row, Cancel, Start, Back
 from aiogram_dialog.widgets.text import Const, Format
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.dialogs.help_dialog import HelpSG
+from bot.dialogs.state_groups import HelpSG, ListOfRemindersSG, MainSG
 from db.db_actions import add_task_to_db
 from parser.core import remind_formatter
 from scheduler.scheduler_actions import add_job_to_scheduler
-
-
-class MainSG(StatesGroup):
-    criterion = State()
-    text = State()
-    total = State()
-
 
 CANCEL_EDIT = SwitchTo(
     Const("Отменить редактирование"),
@@ -45,7 +37,7 @@ async def result_getter(dialog_manager: DialogManager, **kwargs):
 
 
 async def cancel_clicked(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await callback.message.answer("выберите команду в меню")
+    manager.dialog_data["finished"] = False
 
 
 async def accept_clicked(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -60,11 +52,23 @@ async def accept_clicked(callback: CallbackQuery, button: Button, manager: Dialo
         task_id = await add_task_to_db(manager, result, session)
         await add_job_to_scheduler(apscheduler, manager, result, task_id)
 
-        await callback.message.answer(f"💡 Напоминание добавлено!")
+        await manager.next()
     except Exception as e:
         await callback.message.answer(str(e))
+        await callback.message.answer("💡 для продолжения воспользуйтесь меню")
+        await manager.done()
 
-    await manager.done()
+
+async def add_task_clicked(callback: CallbackQuery,
+                           button: Button,
+                           dialog_manager: DialogManager):
+    dialog_manager.dialog_data["finished"] = False
+
+
+async def list_tasks_clicked(cq: CallbackQuery,
+                             button: Button,
+                             dialog_manager: DialogManager):
+    await dialog_manager.done()
 
 
 # форматированный текст для главного диалога
@@ -85,7 +89,7 @@ task_text = as_list(
 total_text = Format(
     as_list(
         as_marked_section(
-            Bold("💡 Итог:"),
+            Bold("💡 Проверьте!:"),
             as_key_value("Напоминание придет", Italic("{criterion}")),
             as_key_value("С текстом", Italic("{text}")),
             marker="✔️ "
@@ -99,7 +103,8 @@ main_dialog = Dialog(
         Const(criterion_text.as_html()),
         TextInput(id="criterion", on_success=next_state_or_finish_state),
         Row(
-            Back(Const("назад")),
+            Start(Const("список напоминаний"), id="list_tasks", state=ListOfRemindersSG.start,
+                  on_click=list_tasks_clicked),
             Start(Const("помощь"), id="help", state=HelpSG.start),
         ),
         CANCEL_EDIT,
@@ -118,14 +123,23 @@ main_dialog = Dialog(
     ,
     Window(
         *total_text,
-        SwitchTo(Const("Изменить условие"), state=MainSG.criterion, id="to_criterion"),
-        SwitchTo(Const("Изменить текст"), state=MainSG.text, id="to_text"),
+        SwitchTo(Const("изменить условие"), state=MainSG.criterion, id="to_criterion"),
+        SwitchTo(Const("изменить текст"), state=MainSG.text, id="to_text"),
         Start(Const("помощь"), id="help", state=HelpSG.start),
         Row(
-            Cancel(Const("отмена"), on_click=cancel_clicked),
+            SwitchTo(Const("отмена"), on_click=cancel_clicked, id='cancel', state=MainSG.criterion),
             Button(Const("принять"), id="accept", on_click=accept_clicked),
         ),
         state=MainSG.total,
         getter=result_getter
+    ),
+    Window(
+        Const(f"💡 Напоминание добавлено!"),
+        Row(
+            SwitchTo(Const("добавить напоминание"), state=MainSG.criterion, id="add_task", on_click=add_task_clicked),
+            Start(Const("список напоминаний"), id="list_tasks", state=ListOfRemindersSG.start,
+                  on_click=list_tasks_clicked),
+        ),
+        state=MainSG.select
     ),
 )
