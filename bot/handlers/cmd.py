@@ -11,7 +11,7 @@ cmd_router = Router()
 
 @cmd_router.message(CommandStart())
 async def cmd_start(_, dialog_manager: DialogManager) -> None:
-    await dialog_manager.start(MainSG.start, mode=StartMode.RESET_STACK)
+    await dialog_manager.start(MainSG.criterion, mode=StartMode.RESET_STACK)
 
 
 @cmd_router.message(Command(commands="help"))

@@ -16,7 +16,6 @@ from scheduler.scheduler_actions import add_job_to_scheduler
 
 
 class MainSG(StatesGroup):
-    start = State()
     criterion = State()
     text = State()
     total = State()
@@ -96,14 +95,6 @@ total_text = Format(
 
 # главный диалог
 main_dialog = Dialog(
-    Window(
-        Const(start_text.as_html()),
-        Row(
-            Start(Const("помощь"), id="help", state=HelpSG.start),
-            Next(Const("далее"))
-        ),
-        state=MainSG.start
-    ),
     Window(
         Const(criterion_text.as_html()),
         TextInput(id="criterion", on_success=next_state_or_finish_state),
