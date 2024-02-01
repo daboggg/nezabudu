@@ -5,7 +5,7 @@ from aiogram.types import CallbackQuery
 from aiogram.utils.formatting import Bold, as_key_value, as_marked_section
 from aiogram_dialog import Dialog, Window, DialogManager
 from aiogram_dialog.widgets.kbd import Select, Column, Back, Button, Row, Start
-from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.text import Const, Format, Case
 from apscheduler.job import Job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -17,12 +17,15 @@ async def window1_get_data(**kwargs):
     user_id = manager.event.from_user.id
     list_of_reminds_tmp: list[Job] = kwargs["apscheduler"].get_jobs()
     # фильтрую список Job по user_id
-    list_of_reminds = filter(lambda j: int(j.name) == user_id, list_of_reminds_tmp)
+    list_of_reminds = list(filter(lambda j: int(j.name) == user_id, list_of_reminds_tmp))
+    is_not_empty = "True" if list_of_reminds else "False"
+    print(is_not_empty)
     return {
         "reminds": [
             (f"{remind.kwargs['criterion']}   {remind.kwargs['text']}", remind.id)
             for remind in list_of_reminds
-        ]
+        ],
+        "is_not_empty": is_not_empty
     }
 
 
@@ -60,15 +63,21 @@ async def on_delete(callback: CallbackQuery, button: Button,
 
 
 async def new_task_clicked(cq: CallbackQuery,
-        button: Button,
-        dialog_manager: DialogManager):
+                           button: Button,
+                           dialog_manager: DialogManager):
     await dialog_manager.done()
-
 
 
 list_of_reminders_dialog = Dialog(
     Window(
-        Const("📄 Список напоминаний"),
+        # Const("📄 Список напоминаний"),
+        Case(
+            {
+                "True": Const("📄 Список напоминаний: 👇"),
+                "False": Const("📄 Список пустой 🫲   🫱"),
+            },
+            selector="is_not_empty"
+        ),
         Column(
             Select(
                 Format("{item[0]}"),
@@ -84,15 +93,6 @@ list_of_reminders_dialog = Dialog(
     ),
     Window(
         Format("{remind_text}"),
-        # Column(
-        #     Select(
-        #         Format("{item[0]}"),
-        #         id="s_reminds",
-        #         items="reminds",
-        #         item_id_getter=operator.itemgetter(1),
-        #         on_click=on_remind_selected,
-        #     ),
-        # ),
         Row(
             Back(Const("назад")),
             Button(Const("удалить"), on_click=on_delete, id="delete_remind"),
