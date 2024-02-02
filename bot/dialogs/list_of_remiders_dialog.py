@@ -4,7 +4,7 @@ from typing import Any
 from aiogram.types import CallbackQuery
 from aiogram.utils.formatting import Bold, as_key_value, as_marked_section
 from aiogram_dialog import Dialog, Window, DialogManager
-from aiogram_dialog.widgets.kbd import Select, Column, Back, Button, Row, Start
+from aiogram_dialog.widgets.kbd import Select, Column, Back, Button, Row, Start, ScrollingGroup
 from aiogram_dialog.widgets.text import Const, Format, Case
 from apscheduler.job import Job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -19,13 +19,13 @@ async def window1_get_data(**kwargs):
     # фильтрую список Job по user_id
     list_of_reminds = list(filter(lambda j: int(j.name) == user_id, list_of_reminds_tmp))
     is_not_empty = "True" if list_of_reminds else "False"
-    print(is_not_empty)
     return {
         "reminds": [
             (f"{remind.kwargs['criterion']}   {remind.kwargs['text']}", remind.id)
             for remind in list_of_reminds
         ],
-        "is_not_empty": is_not_empty
+        "is_not_empty": is_not_empty,
+        "list_size": len(list_of_reminds)
     }
 
 
@@ -73,12 +73,12 @@ list_of_reminders_dialog = Dialog(
         # Const("📄 Список напоминаний"),
         Case(
             {
-                "True": Const("📄 Список напоминаний: 👇"),
+                "True": Format("📄 Список напоминаний:\nвсего: {list_size} 👇"),
                 "False": Const("📄 Список пустой 🫲   🫱"),
             },
             selector="is_not_empty"
         ),
-        Column(
+        ScrollingGroup(
             Select(
                 Format("{item[0]}"),
                 id="s_reminds",
@@ -86,6 +86,9 @@ list_of_reminders_dialog = Dialog(
                 item_id_getter=operator.itemgetter(1),
                 on_click=on_remind_selected,
             ),
+            id="numbers",
+            width=1,
+            height=8,
         ),
         Start(Const("добавить напоминание"), id="new_task", state=MainSG.criterion, on_click=new_task_clicked),
         state=ListOfRemindersSG.start,
