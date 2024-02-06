@@ -12,7 +12,7 @@ from bot.dialogs.main_dialog import main_dialog
 from bot.dialogs.help_dialog import help_dialog
 from bot.handlers.cmd import cmd_router
 from bot.middlewares.apschedmiddleware import SchedulerMiddleware
-from db.db_actions import sync_delete_task_from_db
+from db.db_actions import delete_task_from_db
 from db.db_helper import db_helper
 from scheduler.scheduler_actions import recovery_job_to_scheduler
 from settings import settings
@@ -23,11 +23,17 @@ async def start_bot(bot: Bot):
     await set_commands(bot)
     await bot.send_message(settings.bots.admin_id, text='Бот запущен')
 
+
 scheduler: AsyncIOScheduler
+
 
 async def stop_bot(bot: Bot):
     await bot.send_message(settings.bots.admin_id, text='Бот остановлен')
     scheduler.shutdown()
+
+
+def delete_remind_from_db(job):
+    asyncio.get_running_loop().create_task(delete_task_from_db(job))
 
 
 async def start():
@@ -42,11 +48,9 @@ async def start():
     global scheduler
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
 
-
     # слушатель на событие удаления job
-    scheduler.add_listener(sync_delete_task_from_db, apscheduler.events.EVENT_JOB_REMOVED)
+    scheduler.add_listener(delete_remind_from_db, apscheduler.events.EVENT_JOB_REMOVED)
     scheduler.start()
-
 
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
 
@@ -58,7 +62,6 @@ async def start():
 
     # регистрация middlewares
     dp.update.middleware.register(SchedulerMiddleware(scheduler))
-
 
     # подключение роутеров
     dp.include_routers(
@@ -81,6 +84,6 @@ async def start():
     finally:
         await bot.session.close()
 
+
 if __name__ == '__main__':
     asyncio.run(start())
-
